@@ -1,0 +1,9 @@
+<%@model models.User %>
+
+<html>
+    <body>
+        <p>You created a user!</p>
+        <p>The username is: <%= model.getUsername() %></p>
+        <p>The password is: <%= model.getPassword() %></p>
+    </body>
+</html>

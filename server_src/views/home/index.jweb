@@ -1,0 +1,14 @@
+<html>
+    <body>
+        <%
+            long time = System.currentTimeMillis();
+            int[] ints = new int[] { 1, 5, 7 };
+        %>
+        <p>The current number of milliseconds since the epoch is: <strong><%= time %></strong>.</p>
+        <p>There are <%= ints.length %> elements in the array.</p>
+        <p>Here are the elements:</p>
+        <% for (int i : ints) { %>
+            <p><%= i %></p>
+        <% } %>
+    </body>
+</html>

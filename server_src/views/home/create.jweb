@@ -1,0 +1,35 @@
+<html>
+    <body>
+        <p>No home creation!</p>
+        <p>But you can make a user!</p>
+    	Username:<br>
+		<input id='username' type='text' name='username'>
+		<br>
+		Password:<br>
+		<input id='password' type='password' name='password'>
+		<br><br>
+		<button onclick='createUser()'>Submit</button>
+		
+		<script>
+			function createUser() {
+				var data = {
+					username: document.getElementById('username').value,
+					password: document.getElementById('password').value
+				};
+			
+				var http = new XMLHttpRequest();
+				http.open('POST', '/bbatliner/user/create', true);
+				http.setRequestHeader('Content-type', 'application/json');
+				http.send(JSON.stringify(data));
+				
+				http.onreadystatechange = function() {
+					if (http.readyState == 4 && http.status == 200) {
+						var div = document.createElement('body');
+						div.innerHTML = http.responseText;
+						document.body = div;
+					}
+				}
+			}
+		</script>
+    </body>
+</html>

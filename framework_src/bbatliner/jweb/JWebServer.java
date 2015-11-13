@@ -1,16 +1,11 @@
 package bbatliner.jweb;
 
-import static bbatliner.http.HttpMethod.*;
-
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-
-import bbatliner.http.Route;
-import bbatliner.http.Routes;
 
 /**
  * An HTTP server designed to serve JWeb files, a modified version of JSP.
@@ -37,7 +32,6 @@ public class JWebServer {
 	
 	private String webRoot;
 	private int port;
-	private Routes routes = new Routes();
 	private boolean hasStarted = false;
 	
 	/**
@@ -80,12 +74,7 @@ public class JWebServer {
 	 * Tell the server to start listening for incoming HTTP requests.
 	 * Requests will be served according to this server's Routes.
 	 */
-	public void start() {
-		// Add a default route if none exist
-		if (routes.size() == 0) {
-			routes.add(new Route(GET, "/", "/index.jweb", new SimpleRenderRouteHandler()));
-		}
-		
+	public void start() {		
 		try (ServerSocket serverSocket = new ServerSocket(port, 50, InetAddress.getLoopbackAddress())) {			
 			System.out.println("Listening on "
 					+ serverSocket.getInetAddress().getHostAddress()
@@ -113,28 +102,6 @@ public class JWebServer {
 			hasStarted = false;
 			System.out.println("Shutting down...");
 		}
-	}
-	
-	/**
-	 * Register a route to this server.
-	 * @param route The route to be registered.
-	 * @return true if the route could be registered, else false.
-	 * @throws IllegalStateException If a route was tried to be registered after the server has started.
-	 */
-	public boolean registerRoute(Route route) {
-		if (hasStarted) throw new IllegalStateException("Routes cannot be modified once server has started.");
-		return routes.add(route);
-	}
-	
-	/**
-	 * Unregister a route from this server.
-	 * @param route The route to be unregistered (must be equal in path, method, and resource).
-	 * @return true if the route could be removed, else false.
-	 * @throws IllegalStateException If a route was tried to be unregistered after the server has started.
-	 */
-	public boolean unregisterRoute(Route route) {
-		if (hasStarted) throw new IllegalStateException("Routes cannot be modified once server has started.");
-		return routes.remove(route);
 	}
 
 	public String getWebRoot() {

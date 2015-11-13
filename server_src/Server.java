@@ -13,7 +13,7 @@ public class Server {
 		JWebServer server = new JWebServer();
 		
 		server.setPort(port);
-		server.setWebRoot(webRoot);
+//		server.setWebRoot(webRoot);
 		
 //		server.registerRoute(new Route(GET, "/", "/index.jweb", new SimpleRenderRouteHandler()));
 //		server.registerRoute(new Route(POST, "/", "/post_index.jweb", new SimpleRenderRouteHandler()));

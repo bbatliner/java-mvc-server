@@ -6,7 +6,7 @@ package bbatliner.reflection;
  *
  */
 public final class ObjectCaster {
-	// Pricate constructor (prevents instantiation)
+	// Private constructor (prevents instantiation)
 	private ObjectCaster() {
 		
 	}

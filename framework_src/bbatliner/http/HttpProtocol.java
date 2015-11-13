@@ -1,24 +1,21 @@
 package bbatliner.http;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import bbatliner.jweb.Parameters;
-import bbatliner.reflection.ObjectCaster;
+import bbatliner.reflection.ObjectMarshaller;
 
 /**
  * An implementation of the HTTP protocol. Keeps track of requests and serves
@@ -116,7 +113,6 @@ public class HttpProtocol {
 								}
 							}
 						}
-						// TODO: `else` respond with a list of available applications?
 						
 						// Find the resource within the specified web application
 						// The client needs to specify an app and some further information (controller or resource)
@@ -126,7 +122,6 @@ public class HttpProtocol {
 						
 						// TODO: Annotations on the controller method params (@RequestParamter, @FormParameter, @URLParameter, etc.)
 						// TODO: Annotations on the controller itself (@Controller, @Action)
-						// TODO: Refactor object marshalling
 						// TODO: Add support for www-form-urlencoded (for POSTs that actually redirect!)
 						
 						// Try to instantiate a controller by the name
@@ -138,53 +133,13 @@ public class HttpProtocol {
 						try {
 							Class<?> controller = loader.loadClass(controllerName);
 							
-							// Find the method just by name, not by its parameter types
-							Method[] methods = controller.getDeclaredMethods();
-							Method method = null;
-							// Serve index by default
-							String requestedMethod = urlComponents.length >= 3 ? urlComponents[2] : "index";
-							for (Method m : methods) {
-								if (m.getName().equals(requestedMethod)) {
-									method = m;
-								}
-							}
-							if (method == null) throw new NotFoundException();
-							
-							// Parse any parameters to this controller method
-							List<Object> paramValues = new ArrayList<>();
-							for (Parameter p : method.getParameters()) {
-								Object actualParam = null;
-								Class<?> actualType = p.getType();
-								boolean isUrlParam = p.getType().isPrimitive() || p.getType().equals(String.class);
-								if (isUrlParam) {
-									// Parse primitive and String types from the url query string
-									String urlParam = request.getParameters().get(p.getName());
-									actualParam = ObjectCaster.toType(urlParam, actualType);
-								} else {
-									// Parse complex objects as JSON in the body
-									if (bodyObj == null) {
-										throw new BadRequestException();
-									}
-									Constructor<?>[] constructors = actualType.getDeclaredConstructors();
-									// If there is more than one constructor on the POJO, throw it out
-									if (constructors.length > 1) {
-										throw new InstantiationException();
-									}
-									// Transform the body into the constructor's parameters
-									Constructor<?> constructor = constructors[0];
-									List<Object> constructorParams = new ArrayList<>();
-									for (Parameter par : constructor.getParameters()) {
-										Object param = bodyObj.get(par.getName());
-										constructorParams.add(ObjectCaster.toType(param, par.getType()));
-									}
-									actualParam = constructor.newInstance(constructorParams.toArray());
-								}
-								paramValues.add(actualParam);
-							}
-							
 							// Construct and load the HttpResponse from the controller
 							Constructor<?> constructor = controller.getDeclaredConstructor(HttpRequest.class, ClassLoader.class);
-							httpResponse = (HttpResponse) method.invoke(constructor.newInstance(request, loader), paramValues.toArray());
+							Object c = constructor.newInstance(request, loader);
+							String requestedMethod = urlComponents.length >= 3 ? urlComponents[2] : "index";
+							if (bodyObj != null) request.getParameters().addJSONProperties(bodyObj);
+							
+							httpResponse = (HttpResponse) ObjectMarshaller.invokeMethod(c, requestedMethod, request.getParameters());
 						}
 						// If the controller couldn't be found, try to serve the resource directly from static_content
 						catch (ClassNotFoundException e) {
@@ -219,47 +174,9 @@ public class HttpProtocol {
 					if (httpResponse == null) {
 						httpResponse = HttpResponse.RESPONSE_404;
 					}					
-					
-					
-					/*
-					 * OLD ROUTING LOGIC (PRE-MVC)
-					 */
-//					Routes matchingPaths = routes.findByPath(request.getResource());
-//					
-//					// In the future, when the MVC pattern is more built up, Routes will disappear
-//					// because URLs will be directly mapped to controllers.
-//					if (matchingPaths.size() == 0) {
-//						httpResponse = HttpResponse.RESPONSE_404;
-//					} else {
-//						// matchingMethods is guaranteed to be length 1 because of the uniqueness of method+path pairs
-//						Routes matchingMethods = matchingPaths.findByMethod(request.getMethod());
-//						if (matchingMethods.size() == 0) {
-//							httpResponse = HttpResponse.RESPONSE_405;
-//						} else {
-//							try {
-//								Route requested = matchingMethods.get(0);
-//								Route copy = new Route(requested);
-//								copy.setResource(webRoot + "/" + staticContentDir + requested.getResource());
-//								httpResponse = copy.invokeHandler(request, out);
-//							} catch (FileSystemNotFoundException|NoSuchFileException e) {
-//								httpResponse = HttpResponse.RESPONSE_404;
-//							} catch (RenderException e) {
-//								httpResponse = new HttpResponse(500, "RENDER ERROR", "<pre>" + e.getMessage() + "</pre>");
-//							} catch (Exception e) { // generic catch all
-//								e.printStackTrace();
-//								httpResponse = HttpResponse.RESPONSE_500;
-//							}
-//						}
-//					}
-//					
-//					request = null; // reset the request obj
-//					requestComplete = true;
-//					if (httpResponse == null) {
-//						httpResponse = HttpResponse.RESPONSE_404;
-//					}
-//					response = HttpResponse.generateResponse(httpResponse);
 				}
 			} while (!requestComplete);
+			
 			// Reset the state of this protocol object
 			requestComplete = false;
 			processingHeaders = true;

@@ -37,8 +37,7 @@ public abstract class Controller {
     	HttpResponse response = new HttpResponse();
 		response.setCode(200);
 		response.setMessage("OK");
-		// TODO: Probably not the best way to do this...
-		StackTraceElement callingController = new Throwable().getStackTrace()[1];
+		StackTraceElement callingController = Thread.currentThread().getStackTrace()[2];
 		String controller = callingController.getFileName()
 				.substring(0, callingController.getFileName().indexOf("Controller")).toLowerCase();
 		String view = callingController.getMethodName().concat(".jweb");

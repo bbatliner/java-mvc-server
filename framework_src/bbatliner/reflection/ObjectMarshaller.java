@@ -72,11 +72,11 @@ public class ObjectMarshaller {
 			boolean isSimple = actualType.isPrimitive() || actualType.equals(String.class);
 			if (isSimple) {
 				// Parse primitive and String types using simple conversion
-				String urlParam = params.get(p.getName());
-				actualParam = ObjectCaster.toType(urlParam, actualType);
+				String rawParam = params.get(p.getName());
+				actualParam = ObjectCaster.toType(rawParam, actualType);
 			} else {
 				// Parse complex objects by constructing them
-				actualParam = invokePojoConstructor(clazz, params);				
+				actualParam = invokePojoConstructor(p.getType(), params);				
 			}
 			paramValues.add(actualParam);
 		}
